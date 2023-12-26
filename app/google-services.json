@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "895608318387",
+    "project_id": "tinyexplorers-5bd01",
+    "storage_bucket": "tinyexplorers-5bd01.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:895608318387:android:704aadee0a19b6132443c6",
+        "android_client_info": {
+          "package_name": "com.example.tinyexplorers"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPpvn2HxygbqYzeQVLq-BFssbQtC_CTEg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
