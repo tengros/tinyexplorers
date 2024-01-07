@@ -5,13 +5,13 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -23,7 +23,10 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import com.google.android.libraries.places.api.model.Place
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mapView: MapView
@@ -38,6 +41,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        Places.initialize(applicationContext, "AIzaSyB6jFGRFNx2PK5r8c6sVWj2PyPzlsv-7q8")
 
         myLocationButton = findViewById(R.id.locationButton)
 
@@ -157,17 +162,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun savePlaceDetails(userId: String, place: Place, position: LatLng) {
+    private fun savePlaceDetails(userId: String, place: com.example.tinyexplorers.Place, marker: LatLng) {
+        val googlePlace = Place.builder()
+            .setName(place.name)
+            .setLatLng(LatLng(place.latitude, place.longitude))
+            // Fyll i resten av fälten baserat på behov
+            .build()
+
         val placeDocument = db.collection("users").document(userId)
             .collection("places")
-            .document("${position.latitude}_${position.longitude}")
+            .document("${place.latitude}_${place.longitude}")
 
-        placeDocument.set(place, SetOptions.merge())
+        placeDocument.set(googlePlace)
             .addOnSuccessListener {
                 println("Platsens detaljer sparade i Firestore")
-
-                // Efter att platsen har sparats i Firestore, lägg till en markering på kartan
-                addMarkerToMap(position, place.name)
+                addMarkerToMap(LatLng(place.latitude, place.longitude), place.name)
             }
             .addOnFailureListener { e ->
                 println("Fel vid sparande av platsens detaljer: $e")
@@ -179,7 +188,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap.addMarker(markerOptions)
     }
 
-    private val DEFAULT_LOCATION = LatLng(57.312048767787964, 12.448574267327785) // Stockholm's coordinates as an example
+    private val DEFAULT_LOCATION = LatLng( 57.7089, 11.9746) // Stockholm's coordinates as an example
 
     private fun enableMyLocation() {
 
@@ -200,6 +209,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 } ?: run {
                     // Handle when location is null or empty
                     Log.d("!!!", "Last location is null or empty.")
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(DEFAULT_LOCATION, 12f))
                 }
             }
         } else {
@@ -248,10 +258,38 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun createMarkersOnMap(markersList: List<Place>) {
         for (place in markersList) {
-            val latLng = LatLng(place.latitude, place.longitude)
-            val marker = googleMap.addMarker(MarkerOptions().position(latLng).title(place.name))
-            // Anpassa markörens utseende eller lägg till annan information om det behövs
+            val markerLatLng = place.latLng
+            markerLatLng?.let {
+                val marker = googleMap.addMarker(MarkerOptions().position(it).title(place.name))
+                // Anpassa markörens utseende eller lägg till annan information om det behövs
+            }
         }
+    }
+
+    private fun initPlaceAutoComplete() {
+        val autocompleteFragment =
+            supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
+
+        autocompleteFragment.setPlaceFields(
+            listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
+        )
+
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                // Här kan du få den valda platsens information, som namn och position
+                val placeName = place.name
+                val placeLatLng = place.latLng
+
+                // Flytta kameran till den valda platsen
+                placeLatLng?.let {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
+                }
+            }
+
+            override fun onError(status: Status) {
+                // Hantera fel här om det behövs
+            }
+        })
     }
 
     override fun onResume() {

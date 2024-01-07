@@ -46,15 +46,24 @@
         <EditText
             android:id="@+id/searchEditText"
             android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:layout_marginStart="5dp"
             android:layout_marginEnd="5dp"
             android:hint="Search places..."
-            android:visibility="gone"
+            android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/accountButton"
             app:layout_constraintStart_toEndOf="@+id/searchButton"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- AutocompleteSupportFragment för platssökning -->
+        <fragment
+            android:id="@+id/autocomplete_fragment"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="visible" />
 
 
         <!-- Knapp för konto (ansikte) -->
