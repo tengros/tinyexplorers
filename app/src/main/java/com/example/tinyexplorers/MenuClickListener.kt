@@ -18,23 +18,28 @@ class MenuClickListener(private val context: Context, private val view: View) {
         }
 
         searchButton.setOnClickListener {
-            // Hitta referensen till EditText-elementet
-            val searchEditText = view.findViewById<EditText>(R.id.searchEditText)
-
-            // Om sökrutan är synlig ska den döljas när användaren klickar på sökknappen
-            if (isSearchVisible) {
-                // Dölj sökrutan
-                val intent = Intent(context, MainActivity::class.java)
-                context.startActivity(intent)
-                searchEditText.visibility = View.GONE
-                isSearchVisible = false
-
-            } else {
-                // Visa sökrutan
-                searchEditText.visibility = View.VISIBLE
-                isSearchVisible = true
-            }
+            val intent = Intent(context, MainActivity::class.java)
+            context.startActivity(intent)
         }
+
+//        searchButton.setOnClickListener {
+//            // Hitta referensen till EditText-elementet
+//            val searchEditText = view.findViewById<EditText>(R.id.searchEditText)
+//
+//            // Om sökrutan är synlig ska den döljas när användaren klickar på sökknappen
+//            if (isSearchVisible) {
+//                // Dölj sökrutan
+//                val intent = Intent(context, MainActivity::class.java)
+//                context.startActivity(intent)
+//                searchEditText.visibility = View.GONE
+//                isSearchVisible = false
+//
+//            } else {
+//                // Visa sökrutan
+//                searchEditText.visibility = View.VISIBLE
+//                isSearchVisible = true
+//            }
+//        }
 
         accountButton.setOnClickListener {
             val intent = Intent(context, AccountActivity::class.java)
