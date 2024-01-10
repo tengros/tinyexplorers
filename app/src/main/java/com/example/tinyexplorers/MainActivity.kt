@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
@@ -36,7 +38,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var auth: FirebaseAuth // Lägg till en referens till FirebaseAuth
     private var currentUser: FirebaseUser? = null // Variabel för att lagra aktuell användare
-    private lateinit var myLocationButton: ImageButton
+    private lateinit var dialogView: View
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,13 +46,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Places.initialize(applicationContext, "AIzaSyB6jFGRFNx2PK5r8c6sVWj2PyPzlsv-7q8")
 
-        myLocationButton = findViewById(R.id.locationButton)
-
-        // Klicklyssnare för knappen
-        myLocationButton.setOnClickListener {
-            // Centrera kartan kring användarens nuvarande position
-            enableMyLocation()
-        }
+//        myLocationButton = findViewById(R.id.locationButton)
+//
+//        // Klicklyssnare för knappen
+//        myLocationButton.setOnClickListener {
+//            // Centrera kartan kring användarens nuvarande position
+//            enableMyLocation()
+//        }
 
         // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
@@ -136,7 +138,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 dialogBuilder.setPositiveButton("Spara") { _, _ ->
                     // Hämta text från EditText-fälten
                     val name = nameEditText.text.toString()
-                    val location = locationEditText.text.toString()
+                    val township = locationEditText.text.toString()
                     val city = cityEditText.text.toString()
                     val description = descriptionEditText.text.toString()
 
@@ -144,11 +146,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val userId = currentUser?.uid
 
                     // Skapa ett Place-objekt med inmatad information
-                    val place = Place(name, marker.latitude, marker.longitude, location, city, description)
+                    val place = MyPlace(name, marker.latitude, marker.longitude, city, description)
 
                     // Lägg till platsens information i Firestore under användarens dokument
                     if (userId != null) {
-                        savePlaceDetails(userId, place, marker)
+                        savePlaceDetails(userId, place, marker, city, description)
                     }
                 }
                 dialogBuilder.setNegativeButton("Avbryt") { dialog, _ ->
@@ -162,18 +164,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun savePlaceDetails(userId: String, place: com.example.tinyexplorers.Place, marker: LatLng) {
-        val googlePlace = Place.builder()
-            .setName(place.name)
-            .setLatLng(LatLng(place.latitude, place.longitude))
-            // Fyll i resten av fälten baserat på behov
-            .build()
+    private fun savePlaceDetails(userId: String, place: com.example.tinyexplorers.MyPlace, marker: LatLng, city: String, description: String) {
+        val publicCheckBox = dialogView.findViewById<CheckBox>(R.id.publicCheckBox)
+        val isPublic = publicCheckBox.isChecked // Kolla om checkboxen är markerad
 
-        val placeDocument = db.collection("users").document(userId)
-            .collection("places")
-            .document("${place.latitude}_${place.longitude}")
+        val placeData = hashMapOf(
+            "name" to place.name,
+            "latitude" to place.latitude,
+            "longitude" to place.longitude,
+            "city" to city, // Lägg till stad
+            "description" to description, // Lägg till beskrivning
+            "public" to isPublic // Lägg till synlighetsstatusen
+            // Lägg till andra fält efter behov
+        )
 
-        placeDocument.set(googlePlace)
+        val placeDocument = db.collection("places").document("${place.latitude}_${place.longitude}")
+
+        placeDocument.set(placeData)
             .addOnSuccessListener {
                 println("Platsens detaljer sparade i Firestore")
                 addMarkerToMap(LatLng(place.latitude, place.longitude), place.name)
@@ -182,7 +189,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 println("Fel vid sparande av platsens detaljer: $e")
             }
     }
-
     private fun addMarkerToMap(latLng: LatLng, title: String) {
         val markerOptions = MarkerOptions().position(latLng).title(title)
         googleMap.addMarker(markerOptions)
@@ -235,6 +241,28 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
     }
+
+    private fun AllfetchMarkersFromFirestore() {
+        db.collection("places")
+            .whereEqualTo("public", true) // Filtrera platser där "public" är true
+            .get()
+            .addOnSuccessListener { documents ->
+                val markersList = ArrayList<Place>()
+                for (document in documents) {
+                    try {
+                        val place = document.toObject(Place::class.java)
+                        markersList.add(place)
+                    } catch (e: Exception) {
+                        Log.e("FetchMarkers", "Error converting document to Place: ${e.message}")
+                    }
+                }
+                // Skapa markörer på kartan baserat på den hämtade platsdatan
+                createMarkersOnMap(markersList)
+            }
+            .addOnFailureListener { e ->
+                Log.e("FetchMarkers", "Error fetching documents from Firestore: ${e.message}")
+            }
+    }
     private fun fetchMarkersFromFirestore(userId: String) {
         db.collection("users").document(userId).collection("places")
             .get()
@@ -266,31 +294,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun initPlaceAutoComplete() {
-        val autocompleteFragment =
-            supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
-
-        autocompleteFragment.setPlaceFields(
-            listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
-        )
-
-        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
-            override fun onPlaceSelected(place: Place) {
-                // Här kan du få den valda platsens information, som namn och position
-                val placeName = place.name
-                val placeLatLng = place.latLng
-
-                // Flytta kameran till den valda platsen
-                placeLatLng?.let {
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
-                }
-            }
-
-            override fun onError(status: Status) {
-                // Hantera fel här om det behövs
-            }
-        })
-    }
 
     override fun onResume() {
         super.onResume()
@@ -315,6 +318,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
+
+
+
 }
 
 

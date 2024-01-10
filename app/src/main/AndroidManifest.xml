@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -16,9 +15,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TinyExplorers"
-        tools:targetApi="31"
-
-        >
+        tools:targetApi="31">
+        <activity
+            android:name=".SearchActivity"
+            android:exported="false" />
         <activity
             android:name=".Login_Activity"
             android:exported="false" />
@@ -39,7 +39,5 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyB6jFGRFNx2PK5r8c6sVWj2PyPzlsv-7q8" />
     </application>
-
-
 
 </manifest>
