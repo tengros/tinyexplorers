@@ -64,11 +64,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             accountButton,
             loginButton,
             supportFragmentManager
-)
+        )
         val autocompleteFragment =
             supportFragmentManager.findFragmentById(R.id.autocomplete_fragment)
         autocompleteFragment?.view?.visibility = View.VISIBLE
-
 
 
         // Hämta aktuell användare från Firebase Authentication
@@ -117,40 +116,51 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         }
 
-            }
-
-
+    }
 
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
         enableMyLocation()
 
-        // Register marker click listener here (outside the dialog builder)
+        var lastClickTime: Long = 0
+        var markerClickedOnce = false
+
         googleMap.setOnMarkerClickListener { clickedMarker ->
-            val userId = currentUser?.uid
-            // Skapa en bekräftelsesruta (AlertDialog)
-            val alertDialogBuilder = AlertDialog.Builder(this)
-            alertDialogBuilder.setTitle("Bekräfta borttagning")
-            alertDialogBuilder.setMessage("Är du säker på att du vill ta bort denna markering?")
+            val currentTime = System.currentTimeMillis()
 
-            // Lägg till knapp för att bekräfta borttagning
-            alertDialogBuilder.setPositiveButton("Ja") { _, _ ->
-                // Användaren har bekräftat, ta bort markeringen
-                if (userId != null) {
-                    removeMarker(clickedMarker, userId)
+            if (markerClickedOnce && currentTime - lastClickTime < 400) {
+                val userId = currentUser?.uid
+                userId?.let { fetchMarkersFromFirestore(it) }
+
+                // Skapa en bekräftelsesruta (AlertDialog)
+                val alertDialogBuilder = AlertDialog.Builder(this)
+                alertDialogBuilder.setTitle("Bekräfta borttagning")
+                alertDialogBuilder.setMessage("Är du säker på att du vill ta bort denna markering?")
+
+                // Lägg till knapp för att bekräfta borttagning
+                alertDialogBuilder.setPositiveButton("Ja") { _, _ ->
+                    // Användaren har bekräftat, ta bort markeringen
+                    if (userId != null) {
+                        removeMarker(clickedMarker, userId)
+                    }
                 }
+
+                // Lägg till knapp för att avbryta
+                alertDialogBuilder.setNegativeButton("Avbryt") { dialog, _ ->
+                    dialog.dismiss() // Stäng dialogen utan att ta bort markeringen
+                }
+
+                // Visa den skapade AlertDialog
+                alertDialogBuilder.create().show()
+
+                true // Indikera att markörens klick har hanterats
+            } else {
+                markerClickedOnce = true
             }
 
-            // Lägg till knapp för att avbryta
-            alertDialogBuilder.setNegativeButton("Avbryt") { dialog, _ ->
-                dialog.dismiss() // Stäng dialogen utan att ta bort markeringen
-            }
-
-            // Visa den skapade AlertDialog
-            alertDialogBuilder.create().show()
-
-            true // Indikera att markörens klick har hanterats
+            lastClickTime = currentTime
+            false // Indikera att markörens klick har hanterats
         }
 
         googleMap.setOnMapLongClickListener { marker ->
@@ -174,6 +184,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val description = descriptionEditText.text.toString()
 
                     val userId = currentUser?.uid
+                    userId?.let { fetchMarkersFromFirestore(it) }
 
                     val place = MyPlace(
                         name,
@@ -198,23 +209,34 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             true
         }
     }
-    private fun removeMarker(marker: Marker, userId:  String) {
-        db.collection("users").document(userId).collection("places").document("${marker.position.latitude}_${marker.position.longitude}").delete()
-        val userDocRef = firestore.collection("users").document(userId)
-
-        // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och öka det med 1
-        userDocRef.update("savedPlacesCount", FieldValue.increment(-1))
+    private fun removeMarker(marker: Marker, userId: String) {
+        db.collection("users").document(userId).collection("places")
+            .document("${marker.position.latitude}_${marker.position.longitude}")
+            .delete()
             .addOnSuccessListener {
-                // Uppdateringen lyckades
-                Log.d("savePlaceDetails", "savedPlacesCount ökades framgångsrikt")
+                Log.d("removeMarker", "addOnSuccessListener körs")
+                // Borttagning från Firestore lyckades
+                Log.d("removeMarker", "Markering borttagen från Firestore")
+
+                // Ta bort markeringen från kartan
+                marker.remove()
+
+                // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och minska det med 1
+                val userDocRef = firestore.collection("users").document(userId)
+                userDocRef.update("savedPlacesCount", FieldValue.increment(-1))
+                    .addOnSuccessListener {
+                        // Uppdateringen lyckades
+                        Log.d("removeMarker", "savedPlacesCount minskades framgångsrikt")
+                    }
+                    .addOnFailureListener { exception ->
+                        // Hantera fel här
+                        Log.e("removeMarker", "Fel vid minskning av savedPlacesCount: $exception")
+                    }
             }
             .addOnFailureListener { exception ->
                 // Hantera fel här
-                Log.e("savePlaceDetails", "Fel vid ökning av savedPlacesCount: $exception")
+                Log.e("removeMarker", "Fel vid borttagning från Firestore: $exception")
             }
-        marker.remove()
-
-
     }
     private fun savePlaceDetails(userId: String, place: MyPlace) {
         val userDocRef = firestore.collection("users").document(userId)
@@ -229,7 +251,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Hantera fel här
                 Log.e("savePlaceDetails", "Fel vid ökning av savedPlacesCount: $exception")
             }
-            val placeData = hashMapOf(
+        val placeData = hashMapOf(
             "name" to place.name,
             "latitude" to place.latitude,
             "longitude" to place.longitude,
