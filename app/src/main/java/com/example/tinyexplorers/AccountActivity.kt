@@ -3,7 +3,9 @@ package com.example.tinyexplorers
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
 import com.google.firebase.auth.FirebaseAuth
@@ -25,13 +27,19 @@ class AccountActivity : AppCompatActivity() {
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
 
+        val autocompleteFragment =
+            supportFragmentManager.findFragmentById(R.id.autocomplete_fragment)
+        autocompleteFragment?.view?.visibility = View.GONE
+
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
         menuClickListener = MenuClickListener(this, findViewById(android.R.id.content))
         menuClickListener.setOnClickListeners(
             settingsButton,
             searchButton,
             accountButton,
-            loginButton        )
+            loginButton,
+            supportFragmentManager
+      )
 
         // Initialisera Firebase Auth och Firestore
         auth = FirebaseAuth.getInstance()

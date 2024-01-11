@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var auth: FirebaseAuth // Lägg till en referens till FirebaseAuth
     private var currentUser: FirebaseUser? = null // Variabel för att lagra aktuell användare
-    private lateinit var dialogView: View
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,9 +52,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
         val searchButton: ImageButton = findViewById(R.id.searchButton)
-
-        val searchEditText: EditText = findViewById(R.id.searchEditText)
-
+        searchButton.visibility = View.GONE
 
 
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
@@ -64,7 +62,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             searchButton,
             accountButton,
             loginButton,
+            supportFragmentManager
 )
+        val autocompleteFragment =
+            supportFragmentManager.findFragmentById(R.id.autocomplete_fragment)
+        autocompleteFragment?.view?.visibility = View.VISIBLE
+
+
 
         // Hämta aktuell användare från Firebase Authentication
         auth = FirebaseAuth.getInstance()
@@ -94,6 +98,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             )
         }
+
         currentUser?.let { user ->
             Log.d("MapReady", "Before fetching user ID")
             val userId = user.uid // Här har du användarens ID
@@ -102,8 +107,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             fetchMarkersFromFirestore(userId)
         }
 
-
-    }
+            }
 
 
    override fun onMapReady(map: GoogleMap) {
