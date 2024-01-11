@@ -1,5 +1,6 @@
 package com.example.tinyexplorers
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -16,10 +17,16 @@ class AccountActivity : AppCompatActivity() {
     private lateinit var userTextView: TextView
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
+    var savedPlacesCount: Int = 0
+    private var memberSinceDate: String = ""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_account)
+
+        val savedPlacesTextView = findViewById<TextView>(R.id.savedPlacesTextView)
+        val memberSinceTextView = findViewById<TextView>(R.id.memberSinceTextView)
 
         // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
@@ -39,7 +46,7 @@ class AccountActivity : AppCompatActivity() {
             accountButton,
             loginButton,
             supportFragmentManager
-      )
+        )
 
         // Initialisera Firebase Auth och Firestore
         auth = FirebaseAuth.getInstance()
@@ -47,6 +54,8 @@ class AccountActivity : AppCompatActivity() {
 
         // Hämta referens till TextView
         userTextView = findViewById(R.id.userTextView)
+
+
 
         // Hämta referens till logoutButton
         val logoutButton = findViewById<Button>(R.id.logoutButton)
@@ -59,19 +68,25 @@ class AccountActivity : AppCompatActivity() {
             finish()
         }
 
-        // Hämta inloggad användares information från Firestore om användaren är inloggad
         val currentUser = auth.currentUser
         if (currentUser != null) {
             val userId = currentUser.uid
 
-            // Exempel: Antag att din användarinformation är lagrad under "users" i Firestore
             val userDocRef = firestore.collection("users").document(userId)
             userDocRef.get().addOnSuccessListener { document ->
-                if (document != null) {
+                if (document != null && document.exists()) {
                     val currentUser = auth.currentUser
                     if (currentUser != null) {
                         val userEmail = currentUser.email
                         userTextView.text = "Du är inloggad som: $userEmail"
+
+                        // Hämta värden från dokumentet i Firestore och uppdatera variablerna
+                        savedPlacesCount = document.getLong("savedPlacesCount")?.toInt() ?: 0
+                        memberSinceDate = document.getString("memberSinceDate") ?: ""
+
+                        // Uppdatera texten i dina TextView-element
+                        savedPlacesTextView.text = "Antal sparade platser: $savedPlacesCount"
+                        memberSinceTextView.text = "Medlem sedan: $memberSinceDate"
                     } else {
                         userTextView.text = "Ingen användare är för närvarande inloggad"
                     }
@@ -81,7 +96,7 @@ class AccountActivity : AppCompatActivity() {
             }
         } else {
             userTextView.text = "Ingen användare är för närvarande inloggad"
-        }
 
     }
-}
+}}
+

@@ -1,5 +1,6 @@
 package com.example.tinyexplorers
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -13,6 +14,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Date
 
 class Login_Activity : AppCompatActivity() {
 
@@ -20,6 +24,7 @@ class Login_Activity : AppCompatActivity() {
 
     private lateinit var menuClickListener: MenuClickListener
     lateinit var auth: FirebaseAuth
+    lateinit var firestore: FirebaseFirestore
     lateinit var emailView: EditText
     lateinit var passwordView: EditText
 
@@ -45,7 +50,10 @@ class Login_Activity : AppCompatActivity() {
 
         )
 
+
         auth = Firebase.auth
+        firestore = FirebaseFirestore.getInstance()
+
         emailView = findViewById(R.id.EmailEditTextText)
         passwordView = findViewById(R.id.PasswordEditTextText)
 
@@ -75,11 +83,8 @@ class Login_Activity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d("!!!", "signed in")
                     goToAddActivity()
                 } else {
-                    Log.d("!!!", "user not signed in ${task.exception}")
-                    // Visa ett meddelande med Toast
                     Toast.makeText(this@Login_Activity, "Felaktigt användarnamn eller lösenord", Toast.LENGTH_SHORT).show()
                 }
 
@@ -94,6 +99,7 @@ class Login_Activity : AppCompatActivity() {
 
     }
 
+    @SuppressLint("SimpleDateFormat")
     fun signUp() {
         val email = emailView.text.toString()
         val password = passwordView.text.toString()
@@ -101,15 +107,35 @@ class Login_Activity : AppCompatActivity() {
         if (email.isEmpty() || password.isEmpty()) {
             return
         }
+
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d("!!!", "create sucess")
-                    goToAddActivity()
-                } else {
-                    Log.d("!!!", "user not created ${task.exception}")
-                }
+                    val userId = auth.currentUser?.uid
 
+                    if (userId != null) {
+                        val userDocRef = firestore.collection("users").document(userId)
+
+                        val currentDate = SimpleDateFormat("yyyy-MM-dd").format(Date())
+
+                        val initialData = hashMapOf(
+                            "memberSinceDate" to currentDate,
+                            "savedPlacesCount" to 0
+                        )
+
+                        userDocRef.set(initialData)
+                            .addOnSuccessListener {
+                                // Dokumentet uppdaterades framgångsrikt
+                                goToAddActivity()
+                            }
+                            .addOnFailureListener { exception ->
+                                // Hantera fel här
+                                signIn() // eller gå till annan aktivitet vid fel
+                            }
+                    }
+                } else {
+                    // Registreringen misslyckades, hantera felet här
+                    signIn() // eller gå till annan aktivitet vid fel
+                }
             }
-    }
-}
+    }}

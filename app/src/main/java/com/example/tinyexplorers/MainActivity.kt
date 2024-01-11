@@ -27,6 +27,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
+import com.google.firebase.firestore.FieldValue
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mapView: MapView
@@ -37,7 +38,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var auth: FirebaseAuth // Lägg till en referens till FirebaseAuth
     private var currentUser: FirebaseUser? = null // Variabel för att lagra aktuell användare
     private lateinit var placeSelectionHelper: PlaceSelectionHelper
-
+    private lateinit var firestore: FirebaseFirestore
     private val temporaryMarkersList = mutableListOf<Marker>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,6 +73,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Hämta aktuell användare från Firebase Authentication
         auth = FirebaseAuth.getInstance()
+        firestore = FirebaseFirestore.getInstance()
         currentUser = auth.currentUser
 
         mapView = findViewById(R.id.mapView)
@@ -120,9 +122,36 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
 
-   override fun onMapReady(map: GoogleMap) {
+    override fun onMapReady(map: GoogleMap) {
         googleMap = map
         enableMyLocation()
+
+        // Register marker click listener here (outside the dialog builder)
+        googleMap.setOnMarkerClickListener { clickedMarker ->
+            val userId = currentUser?.uid
+            // Skapa en bekräftelsesruta (AlertDialog)
+            val alertDialogBuilder = AlertDialog.Builder(this)
+            alertDialogBuilder.setTitle("Bekräfta borttagning")
+            alertDialogBuilder.setMessage("Är du säker på att du vill ta bort denna markering?")
+
+            // Lägg till knapp för att bekräfta borttagning
+            alertDialogBuilder.setPositiveButton("Ja") { _, _ ->
+                // Användaren har bekräftat, ta bort markeringen
+                if (userId != null) {
+                    removeMarker(clickedMarker, userId)
+                }
+            }
+
+            // Lägg till knapp för att avbryta
+            alertDialogBuilder.setNegativeButton("Avbryt") { dialog, _ ->
+                dialog.dismiss() // Stäng dialogen utan att ta bort markeringen
+            }
+
+            // Visa den skapade AlertDialog
+            alertDialogBuilder.create().show()
+
+            true // Indikera att markörens klick har hanterats
+        }
 
         googleMap.setOnMapLongClickListener { marker ->
             if (marker != null) {
@@ -134,7 +163,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 val nameEditText = dialogView.findViewById<EditText>(R.id.nameEditText)
                 val locationEditText = dialogView.findViewById<EditText>(R.id.locationEditText)
                 val townshipEditText = dialogView.findViewById<EditText>(R.id.townshipEditText)
-                val descriptionEditText = dialogView.findViewById<EditText>(R.id.descriptionEditText)
+                val descriptionEditText =
+                    dialogView.findViewById<EditText>(R.id.descriptionEditText)
 
                 dialogBuilder.setTitle("Lägg till platsinformation")
                 dialogBuilder.setPositiveButton("Spara") { _, _ ->
@@ -145,11 +175,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     val userId = currentUser?.uid
 
-                    val place = MyPlace(name, marker.latitude, marker.longitude, location, township, description)
+                    val place = MyPlace(
+                        name,
+                        marker.latitude,
+                        marker.longitude,
+                        location,
+                        township,
+                        description
+                    )
 
                     if (userId != null) {
                         savePlaceDetails(userId, place)
-
                     }
                 }
                 dialogBuilder.setNegativeButton("Avbryt") { dialog, _ ->
@@ -162,9 +198,38 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             true
         }
     }
+    private fun removeMarker(marker: Marker, userId:  String) {
+        db.collection("users").document(userId).collection("places").document("${marker.position.latitude}_${marker.position.longitude}").delete()
+        val userDocRef = firestore.collection("users").document(userId)
 
+        // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och öka det med 1
+        userDocRef.update("savedPlacesCount", FieldValue.increment(-1))
+            .addOnSuccessListener {
+                // Uppdateringen lyckades
+                Log.d("savePlaceDetails", "savedPlacesCount ökades framgångsrikt")
+            }
+            .addOnFailureListener { exception ->
+                // Hantera fel här
+                Log.e("savePlaceDetails", "Fel vid ökning av savedPlacesCount: $exception")
+            }
+        marker.remove()
+
+
+    }
     private fun savePlaceDetails(userId: String, place: MyPlace) {
-        val placeData = hashMapOf(
+        val userDocRef = firestore.collection("users").document(userId)
+
+        // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och öka det med 1
+        userDocRef.update("savedPlacesCount", FieldValue.increment(1))
+            .addOnSuccessListener {
+                // Uppdateringen lyckades
+                Log.d("savePlaceDetails", "savedPlacesCount ökades framgångsrikt")
+            }
+            .addOnFailureListener { exception ->
+                // Hantera fel här
+                Log.e("savePlaceDetails", "Fel vid ökning av savedPlacesCount: $exception")
+            }
+            val placeData = hashMapOf(
             "name" to place.name,
             "latitude" to place.latitude,
             "longitude" to place.longitude,
@@ -178,10 +243,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             .collection("places")
             .document("${place.latitude}_${place.longitude}")
 
+
+
         placeDocument.set(placeData)
             .addOnSuccessListener {
                 Log.d("Firestore", "Övriga platsdetaljer sparade i Firestore")
-                addMarkerToMap(LatLng(place.latitude, place.longitude), place.name)
+                addMarkerToMap(LatLng(place.latitude, place.longitude), place)
             }
 
             .addOnFailureListener { e ->
@@ -199,7 +266,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 .position(latLng)
                 .title(selectedPlace.name)
                 .snippet(selectedPlace.city)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
         )
 
         if (temporaryMarker != null) {
@@ -214,8 +281,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         temporaryMarkersList.clear()
     }
-    private fun addMarkerToMap(latLng: LatLng, title: String) {
-        val markerOptions = MarkerOptions().position(latLng).title(title)
+    private fun addMarkerToMap(latLng: LatLng, place: MyPlace) {
+        val markerOptions = MarkerOptions()
+            .position(latLng)
+            .title(place.name)
+            .snippet(place.description)
+
+
         googleMap.addMarker(markerOptions)
     }
 
@@ -297,7 +369,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     try {
                         val place = document.toObject(MyPlace::class.java)
                         markersList.add(place)
-                        addMarkerToMap(LatLng(place.latitude, place.longitude), place.name)
+                        addMarkerToMap(LatLng(place.latitude, place.longitude), place)
                     } catch (e: Exception) {
                         Log.e("FetchMarkers", "Error converting document to Place: ${e.message}")
                     }
