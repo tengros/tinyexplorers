@@ -6,28 +6,26 @@ import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.widget.AutocompleteSupportFragment
-import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.libraries.places.api.model.Place
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -38,7 +36,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private val db = FirebaseFirestore.getInstance()
     private lateinit var auth: FirebaseAuth // Lägg till en referens till FirebaseAuth
     private var currentUser: FirebaseUser? = null // Variabel för att lagra aktuell användare
+    private lateinit var placeSelectionHelper: PlaceSelectionHelper
 
+    private val temporaryMarkersList = mutableListOf<Marker>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,9 +78,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
 
-
-
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Kolla om vi har tillåtelse för platstjänster
@@ -107,7 +104,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             fetchMarkersFromFirestore(userId)
         }
 
+        // Initialisera sökfunktionen och lyssna på vald plats
+        placeSelectionHelper = PlaceSelectionHelper(this)
+        placeSelectionHelper.initPlaceAutoComplete { selectedPlace ->
+            // Använd den valda platsen för att göra vad du behöver, t.ex. centrera kartan
+            val location = LatLng(selectedPlace.latitude, selectedPlace.longitude)
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+
+            addSearchMarker(LatLng(selectedPlace.latitude, selectedPlace.longitude), selectedPlace)
+
+        }
+
             }
+
+
 
 
    override fun onMapReady(map: GoogleMap) {
@@ -179,7 +189,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
     }
+    private fun addSearchMarker(latLng: LatLng, selectedPlace: MyPlace) {
+        // Rensa temporära markörer
+        clearTemporaryMarkers()
 
+        // Lägg till temporär markör för sökt plats
+        val temporaryMarker = googleMap.addMarker(
+            MarkerOptions()
+                .position(latLng)
+                .title(selectedPlace.name)
+                .snippet(selectedPlace.city)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+        )
+
+        if (temporaryMarker != null) {
+            temporaryMarkersList.add(temporaryMarker)
+        }
+    }
+
+    private fun clearTemporaryMarkers() {
+        // Rensa temporära markörer
+        for (marker in temporaryMarkersList) {
+            marker.remove()
+        }
+        temporaryMarkersList.clear()
+    }
     private fun addMarkerToMap(latLng: LatLng, title: String) {
         val markerOptions = MarkerOptions().position(latLng).title(title)
         googleMap.addMarker(markerOptions)

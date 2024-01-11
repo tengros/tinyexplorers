@@ -2,10 +2,11 @@ package com.example.tinyexplorers
 
 import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.common.api.Status
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
-import com.google.api.Context
 
 data class MyPlace(
     val name: String = "",
@@ -17,26 +18,28 @@ data class MyPlace(
     // Lägg till andra attribut om nödvändigt
 )
 
-class PlaceSelectionHelper(private val context: Context) {
-//    fun initPlaceAutoComplete() {
-//        val autocompleteFragment =
-//            (context as FragmentActivity).supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
-//
-//        autocompleteFragment.setPlaceFields(
-//            listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
-//        )
-//
-//        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
-//            override fun onPlaceSelected(place: Place) {
-//                val myPlace = convertToMyPlace(place)
-//                // Använd myPlace för att lagra i Firestore eller hantera det på annat sätt
-//            }
-//
-//            override fun onError(status: Status) {
-//                // Hantera fel här om det behövs
-//            }
-//        })
-//    }
+class PlaceSelectionHelper(private val context: MainActivity) {
+    fun initPlaceAutoComplete(onPlaceSelected: (MyPlace) -> Unit) {
+        val autocompleteFragment =
+            (context as FragmentActivity).supportFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
+
+        autocompleteFragment.setPlaceFields(
+            listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
+        )
+
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                val myPlace = convertToMyPlace(place)
+                onPlaceSelected.invoke(myPlace)
+            }
+
+            override fun onError(status: Status) {
+                // Hantera fel här om det behövs
+            }
+        })
+    }
+
+
 
     private fun convertToMyPlace(place: Place): MyPlace {
         return MyPlace(
@@ -48,4 +51,6 @@ class PlaceSelectionHelper(private val context: Context) {
             // Lägg till andra attribut om nödvändigt
         )
     }
+
+
 }
