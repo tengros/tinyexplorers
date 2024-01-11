@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             if (markerClickedOnce && currentTime - lastClickTime < 400) {
                 val userId = currentUser?.uid
-                userId?.let { fetchMarkersFromFirestore(it) }
+
 
                 // Skapa en bekräftelsesruta (AlertDialog)
                 val alertDialogBuilder = AlertDialog.Builder(this)
@@ -213,18 +213,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         db.collection("users").document(userId).collection("places")
             .document("${marker.position.latitude}_${marker.position.longitude}")
             .delete()
-            .addOnSuccessListener {
-                Log.d("removeMarker", "addOnSuccessListener körs")
-                // Borttagning från Firestore lyckades
-                Log.d("removeMarker", "Markering borttagen från Firestore")
 
-                // Ta bort markeringen från kartan
-                marker.remove()
+            .addOnSuccessListener {
+
+
 
                 // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och minska det med 1
                 val userDocRef = firestore.collection("users").document(userId)
                 userDocRef.update("savedPlacesCount", FieldValue.increment(-1))
                     .addOnSuccessListener {
+                        marker.remove()
                         // Uppdateringen lyckades
                         Log.d("removeMarker", "savedPlacesCount minskades framgångsrikt")
                     }
