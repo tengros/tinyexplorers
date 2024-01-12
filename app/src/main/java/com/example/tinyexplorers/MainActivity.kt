@@ -53,18 +53,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Places.initialize(applicationContext, "AIzaSyB6jFGRFNx2PK5r8c6sVWj2PyPzlsv-7q8")
 
-        // Initialize RecyclerView
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         placesAdapter = MyPlacesAdapter(emptyList())
         recyclerView.adapter = placesAdapter
+        recyclerView.visibility = View.VISIBLE
 
-        // Hämta referenserna till knapparna från layouten
+     
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
         val searchButton: ImageButton = findViewById(R.id.searchButton)
         searchButton.visibility = View.GONE
+
+
 
 
         // Fetch user-added places and update the RecyclerView
@@ -150,7 +152,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap.setOnMarkerClickListener { clickedMarker ->
             val currentTime = System.currentTimeMillis()
 
-            if (markerClickedOnce && currentTime - lastClickTime < 400) {
+            if (markerClickedOnce && currentTime - lastClickTime < 500) {
                 val userId = currentUser?.uid
 
 
@@ -332,7 +334,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap.addMarker(markerOptions)
     }
 
-    private val DEFAULT_LOCATION = LatLng( 57.7089, 11.9746) // Stockholm's coordinates as an example
+    private val DEFAULT_LOCATION = LatLng( 57.7089, 11.9746)
 
     private fun enableMyLocation() {
 
@@ -412,18 +414,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         val place = document.toObject(MyPlace::class.java)
                         markersList.add(place)
                         addMarkerToMap(LatLng(place.latitude, place.longitude), place)
+                        placesAdapter = MyPlacesAdapter(markersList)
+                        recyclerView.adapter = placesAdapter
                     } catch (e: Exception) {
-                        Log.e("FetchMarkers", "Error converting document to Place: ${e.message}")
+
                     }
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("FetchMarkers", "Error fetching documents from Firestore: ${e.message}")
-            }
-        placesAdapter = MyPlacesAdapter(markersList)
-        recyclerView.adapter = placesAdapter
-    }
 
+
+            }
+    }
     private fun createMarkersOnMap(markersList: List<Place>) {
         for (place in markersList) {
             val markerLatLng = place.latLng
