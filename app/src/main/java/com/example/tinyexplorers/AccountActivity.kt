@@ -97,6 +97,5 @@ class AccountActivity : AppCompatActivity() {
         } else {
             userTextView.text = "Ingen användare är för närvarande inloggad"
 
-    }
-}}
-
+        }
+    }}

@@ -12,6 +12,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -40,6 +42,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var placeSelectionHelper: PlaceSelectionHelper
     private lateinit var firestore: FirebaseFirestore
     private val temporaryMarkersList = mutableListOf<Marker>()
+    private val markersList = mutableListOf<MyPlace>()
+    private lateinit var recyclerView: RecyclerView
+
+    private lateinit var placesAdapter: MyPlacesAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +53,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Places.initialize(applicationContext, "AIzaSyB6jFGRFNx2PK5r8c6sVWj2PyPzlsv-7q8")
 
+        // Initialize RecyclerView
+        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        placesAdapter = MyPlacesAdapter(emptyList())
+        recyclerView.adapter = placesAdapter
 
         // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
@@ -55,6 +66,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val searchButton: ImageButton = findViewById(R.id.searchButton)
         searchButton.visibility = View.GONE
 
+
+        // Fetch user-added places and update the RecyclerView
+        currentUser?.let { user ->
+            val userId = user.uid
+            fetchMarkersFromFirestore(userId)
+        }
 
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
         menuClickListener = MenuClickListener(this, findViewById(android.R.id.content))
@@ -95,6 +112,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
             )
+
         }
 
         currentUser?.let { user ->
@@ -104,6 +122,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             // Använd userId för att hämta markörer från Firestore
             fetchMarkersFromFirestore(userId)
         }
+
+
 
         // Initialisera sökfunktionen och lyssna på vald plats
         placeSelectionHelper = PlaceSelectionHelper(this)
@@ -115,6 +135,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             addSearchMarker(LatLng(selectedPlace.latitude, selectedPlace.longitude), selectedPlace)
 
         }
+
 
     }
 
@@ -381,6 +402,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
     }
     private fun fetchMarkersFromFirestore(userId: String) {
+        placesAdapter = MyPlacesAdapter(markersList)
         db.collection("users").document(userId).collection("places")
             .get()
             .addOnSuccessListener { documents ->
@@ -398,6 +420,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             .addOnFailureListener { e ->
                 Log.e("FetchMarkers", "Error fetching documents from Firestore: ${e.message}")
             }
+        placesAdapter = MyPlacesAdapter(markersList)
+        recyclerView.adapter = placesAdapter
     }
 
     private fun createMarkersOnMap(markersList: List<Place>) {
