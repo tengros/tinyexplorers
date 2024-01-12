@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         recyclerView.adapter = placesAdapter
         recyclerView.visibility = View.VISIBLE
 
-     
+
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
@@ -118,27 +118,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         currentUser?.let { user ->
-            Log.d("MapReady", "Before fetching user ID")
-            val userId = user.uid // Här har du användarens ID
+            val userId = user.uid
             Log.d("MapReady", "User ID fetched: $userId")
-            // Använd userId för att hämta markörer från Firestore
             fetchMarkersFromFirestore(userId)
         }
 
 
-
-        // Initialisera sökfunktionen och lyssna på vald plats
         placeSelectionHelper = PlaceSelectionHelper(this)
         placeSelectionHelper.initPlaceAutoComplete { selectedPlace ->
-            // Använd den valda platsen för att göra vad du behöver, t.ex. centrera kartan
+
             val location = LatLng(selectedPlace.latitude, selectedPlace.longitude)
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
 
             addSearchMarker(LatLng(selectedPlace.latitude, selectedPlace.longitude), selectedPlace)
-
         }
-
-
     }
 
 
@@ -166,6 +159,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     // Användaren har bekräftat, ta bort markeringen
                     if (userId != null) {
                         removeMarker(clickedMarker, userId)
+
                     }
                 }
 
@@ -239,6 +233,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             .addOnSuccessListener {
 
+                    fetchMarkersFromFirestore(userId)
 
 
                 // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och minska det med 1
@@ -246,6 +241,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 userDocRef.update("savedPlacesCount", FieldValue.increment(-1))
                     .addOnSuccessListener {
                         marker.remove()
+                        fetchMarkersFromFirestore(userId)
+                            Log.d("MapReady", "User ID fetched: $userId")
                         // Uppdateringen lyckades
                         Log.d("removeMarker", "savedPlacesCount minskades framgångsrikt")
                     }
@@ -279,7 +276,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             "city" to place.city,
             "township" to place.township,
             "description" to place.description
-            // Lägg till andra attribut om nödvändigt
+
         )
 
         val placeDocument = db.collection("users").document(userId)
@@ -318,7 +315,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun clearTemporaryMarkers() {
-        // Rensa temporära markörer
         for (marker in temporaryMarkersList) {
             marker.remove()
         }
@@ -382,27 +378,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun AllfetchMarkersFromFirestore() {
-        db.collection("places")
-            .whereEqualTo("public", true) // Filtrera platser där "public" är true
-            .get()
-            .addOnSuccessListener { documents ->
-                val markersList = ArrayList<Place>()
-                for (document in documents) {
-                    try {
-                        val place = document.toObject(Place::class.java)
-                        markersList.add(place)
-                    } catch (e: Exception) {
-                        Log.e("FetchMarkers", "Error converting document to Place: ${e.message}")
-                    }
-                }
-                // Skapa markörer på kartan baserat på den hämtade platsdatan
-                createMarkersOnMap(markersList)
-            }
-            .addOnFailureListener { e ->
-                Log.e("FetchMarkers", "Error fetching documents from Firestore: ${e.message}")
-            }
-    }
     private fun fetchMarkersFromFirestore(userId: String) {
         placesAdapter = MyPlacesAdapter(markersList)
         db.collection("users").document(userId).collection("places")
