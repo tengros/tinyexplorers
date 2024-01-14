@@ -67,14 +67,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         searchButton.visibility = View.GONE
 
 
-
-
-        // Fetch user-added places and update the RecyclerView
-        currentUser?.let { user ->
-            val userId = user.uid
-            fetchMarkersFromFirestore(userId)
-        }
-
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
         menuClickListener = MenuClickListener(this, findViewById(android.R.id.content))
         menuClickListener.setOnClickListeners(
@@ -147,7 +139,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             if (markerClickedOnce && currentTime - lastClickTime < 500) {
                 val userId = currentUser?.uid
-
+                Log.d("userid", "User ID read: $userId")
 
                 // Skapa en bekräftelsesruta (AlertDialog)
                 val alertDialogBuilder = AlertDialog.Builder(this)
@@ -159,6 +151,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     // Användaren har bekräftat, ta bort markeringen
                     if (userId != null) {
                         removeMarker(clickedMarker, userId)
+                        Log.d("userid", "User ID read: $userId")
 
                     }
                 }
@@ -233,7 +226,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             .addOnSuccessListener {
 
-                    fetchMarkersFromFirestore(userId)
+                fetchMarkersFromFirestore(userId)
+                Log.d("userid", "fetchmarkers $userId")
 
 
                 // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och minska det med 1
@@ -242,13 +236,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     .addOnSuccessListener {
                         marker.remove()
                         fetchMarkersFromFirestore(userId)
-                            Log.d("MapReady", "User ID fetched: $userId")
+                        Log.d("userid", "User ID fetched: $userId")
                         // Uppdateringen lyckades
-                        Log.d("removeMarker", "savedPlacesCount minskades framgångsrikt")
+                        Log.d("userid", "savedPlacesCount minskades framgångsrikt")
                     }
                     .addOnFailureListener { exception ->
                         // Hantera fel här
-                        Log.e("removeMarker", "Fel vid minskning av savedPlacesCount: $exception")
+                        Log.e("userid", "Fel vid minskning av savedPlacesCount: $exception")
                     }
             }
             .addOnFailureListener { exception ->
@@ -296,11 +290,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
     }
+
+    private fun addMarkerToMap(latLng: LatLng, place: MyPlace) {
+        val markerOptions = MarkerOptions()
+            .position(latLng)
+            .title(place.name)
+            .snippet(place.description)
+
+
+        googleMap.addMarker(markerOptions)
+    }
     private fun addSearchMarker(latLng: LatLng, selectedPlace: MyPlace) {
-        // Rensa temporära markörer
+
         clearTemporaryMarkers()
 
-        // Lägg till temporär markör för sökt plats
         val temporaryMarker = googleMap.addMarker(
             MarkerOptions()
                 .position(latLng)
@@ -320,15 +323,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         temporaryMarkersList.clear()
     }
-    private fun addMarkerToMap(latLng: LatLng, place: MyPlace) {
-        val markerOptions = MarkerOptions()
-            .position(latLng)
-            .title(place.name)
-            .snippet(place.description)
 
-
-        googleMap.addMarker(markerOptions)
-    }
 
     private val DEFAULT_LOCATION = LatLng( 57.7089, 11.9746)
 
@@ -391,25 +386,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         addMarkerToMap(LatLng(place.latitude, place.longitude), place)
                         placesAdapter = MyPlacesAdapter(markersList)
                         recyclerView.adapter = placesAdapter
-                    } catch (e: Exception) {
+                    } finally {
 
-                    }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("FetchMarkers", "Error fetching documents from Firestore: ${e.message}")
-
-
-            }
-    }
-    private fun createMarkersOnMap(markersList: List<Place>) {
-        for (place in markersList) {
-            val markerLatLng = place.latLng
-            markerLatLng?.let {
-                val marker = googleMap.addMarker(MarkerOptions().position(it).title(place.name))
-                // Anpassa markörens utseende eller lägg till annan information om det behövs
-            }
-        }
+                    }}}
     }
 
 
