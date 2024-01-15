@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         recyclerView = findViewById(R.id.recyclerViewMain)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        placesAdapter = MyPlacesAdapter(this, emptyList()) { place ->
+        placesAdapter = MyPlacesAdapter(this, recyclerView, emptyList()) { place ->
             centerMapOnPlace(place)
         }
         recyclerView.adapter = placesAdapter
@@ -391,7 +391,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
 
-                placesAdapter = MyPlacesAdapter(this, markersList) { selectedPlace ->
+                placesAdapter = MyPlacesAdapter(this, recyclerView, markersList) { selectedPlace ->
                     centerMapOnPlace(selectedPlace)
                 }
                 recyclerView.adapter = placesAdapter
