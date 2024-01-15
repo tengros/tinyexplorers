@@ -29,7 +29,6 @@ class MenuClickListener(private val context: Context, private val view: View) {
 
         settingsButton.setOnClickListener {
             if (isRecyclerViewExpanded) {
-                // Återgå till ursprungsläge
                 val originalHeightInDp = 84
                 val scale = context.resources.displayMetrics.density
                 val originalHeightInPixels = (originalHeightInDp * scale + 0.5f).toInt()
@@ -40,7 +39,6 @@ class MenuClickListener(private val context: Context, private val view: View) {
 
                 isRecyclerViewExpanded = false
             } else {
-                // Förstora upp RecyclerView
                 val newHeightInDp = 671
                 val scale = context.resources.displayMetrics.density
                 val newHeightInPixels = (newHeightInDp * scale + 0.5f).toInt()
@@ -52,14 +50,15 @@ class MenuClickListener(private val context: Context, private val view: View) {
                 isRecyclerViewExpanded = true
             }
 
-            // Visa/göm autocompleteFragment beroende på om RecyclerView är utökad eller inte
-            autocompleteFragment?.view?.visibility = if (isRecyclerViewExpanded) View.GONE else View.VISIBLE
+
+            autocompleteFragment?.view?.visibility =
+                if (isRecyclerViewExpanded) View.GONE else View.VISIBLE
             searchButton.visibility = if (isRecyclerViewExpanded) View.VISIBLE else View.GONE
 
         }
 
 
-       searchButton.setOnClickListener {
+        searchButton.setOnClickListener {
             val intent = Intent(context, MainActivity::class.java)
             context.startActivity(intent)
             autocompleteFragment?.view?.visibility = View.GONE
@@ -82,4 +81,5 @@ class MenuClickListener(private val context: Context, private val view: View) {
             recyclerView.visibility = View.GONE
 
         }
-    }}
+    }
+}

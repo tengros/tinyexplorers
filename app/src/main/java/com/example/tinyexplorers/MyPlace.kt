@@ -15,7 +15,6 @@ data class MyPlace(
     val city: String = "",
     val township: String = "",
     val description: String = ""
-    // Lägg till andra attribut om nödvändigt
 )
 
 class PlaceSelectionHelper(private val context: MainActivity) {
@@ -34,11 +33,9 @@ class PlaceSelectionHelper(private val context: MainActivity) {
             }
 
             override fun onError(status: Status) {
-                // Hantera fel här om det behövs
             }
         })
     }
-
 
 
     private fun convertToMyPlace(place: Place): MyPlace {
@@ -48,7 +45,6 @@ class PlaceSelectionHelper(private val context: MainActivity) {
             longitude = place.latLng?.longitude ?: 0.0,
             city = place.address.toString(),
             description = place.address?.toString() ?: ""
-            // Lägg till andra attribut om nödvändigt
         )
     }
 

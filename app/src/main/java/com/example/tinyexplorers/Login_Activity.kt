@@ -22,9 +22,10 @@ import java.util.Date
 class Login_Activity : AppCompatActivity() {
 
 
-
     private lateinit var menuClickListener: MenuClickListener
-    private val recyclerView by lazy { findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this) }
+    private val recyclerView by lazy {
+        findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this)
+    }
 
     lateinit var auth: FirebaseAuth
     lateinit var firestore: FirebaseFirestore
@@ -37,7 +38,6 @@ class Login_Activity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.visibility = View.GONE
 
-        // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
         settingsButton.isEnabled = false
         settingsButton.isClickable = false
@@ -48,9 +48,6 @@ class Login_Activity : AppCompatActivity() {
         searchButton.visibility = View.VISIBLE
 
 
-
-
-        // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
         menuClickListener = MenuClickListener(this, findViewById(android.R.id.content))
         menuClickListener.setOnClickListeners(
             settingsButton,
@@ -88,7 +85,11 @@ class Login_Activity : AppCompatActivity() {
         val password = passwordView.text.toString()
 
         if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this@Login_Activity, "Vänligen skriv in både användarnamn och lösenord", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this@Login_Activity,
+                "Vänligen skriv in både användarnamn och lösenord",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
         auth.signInWithEmailAndPassword(email, password)
@@ -96,7 +97,11 @@ class Login_Activity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     goToAddActivity()
                 } else {
-                    Toast.makeText(this@Login_Activity, "Felaktigt användarnamn eller lösenord", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@Login_Activity,
+                        "Felaktigt användarnamn eller lösenord",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
             }
@@ -136,17 +141,15 @@ class Login_Activity : AppCompatActivity() {
 
                         userDocRef.set(initialData)
                             .addOnSuccessListener {
-                                // Dokumentet uppdaterades framgångsrikt
                                 goToAddActivity()
                             }
                             .addOnFailureListener { exception ->
-                                // Hantera fel här
-                                signIn() // eller gå till annan aktivitet vid fel
+                                signIn()
                             }
                     }
                 } else {
-                    // Registreringen misslyckades, hantera felet här
-                    signIn() // eller gå till annan aktivitet vid fel
+                    signIn()
                 }
             }
-    }}
+    }
+}

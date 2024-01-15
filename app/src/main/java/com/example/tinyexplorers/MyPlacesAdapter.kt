@@ -17,11 +17,13 @@ class MyPlacesAdapter(
 
     class PlaceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val placeNameTextView: TextView = itemView.findViewById(R.id.placeNameTextView)
-        val placeDescriptionTextView: TextView = itemView.findViewById(R.id.placeDescriptionTextView)
+        val placeDescriptionTextView: TextView =
+            itemView.findViewById(R.id.placeDescriptionTextView)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.item_place, parent, false)
+        val itemView =
+            LayoutInflater.from(parent.context).inflate(R.layout.item_place, parent, false)
         return PlaceViewHolder(itemView)
     }
 
@@ -73,7 +75,6 @@ class MyPlacesAdapter(
     }
 
     private fun isRecyclerViewExpanded(): Boolean {
-        // Ange ditt eget sätt att avgöra om RecyclerView är expanderad eller inte
         return recyclerView.layoutParams.height > 84
     }
 }

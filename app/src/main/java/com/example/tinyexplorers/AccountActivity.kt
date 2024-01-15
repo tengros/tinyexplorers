@@ -19,8 +19,9 @@ class AccountActivity : AppCompatActivity() {
     private lateinit var userTextView: TextView
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
-    private val recyclerView by lazy { findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this) }
-
+    private val recyclerView by lazy {
+        findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this)
+    }
 
 
     private var memberSinceDate: String = ""
@@ -34,10 +35,8 @@ class AccountActivity : AppCompatActivity() {
         recyclerView.visibility = View.GONE
 
 
-
         val memberSinceTextView = findViewById<TextView>(R.id.memberSinceTextView)
 
-        // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
         settingsButton.isEnabled = false
         settingsButton.isClickable = false
@@ -52,8 +51,6 @@ class AccountActivity : AppCompatActivity() {
         autocompleteFragment?.view?.visibility = View.GONE
 
 
-
-        // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
         menuClickListener = MenuClickListener(this, findViewById(android.R.id.content))
         menuClickListener.setOnClickListeners(
             settingsButton,
@@ -64,21 +61,14 @@ class AccountActivity : AppCompatActivity() {
             supportFragmentManager
         )
 
-
-        // Initialisera Firebase Auth och Firestore
         auth = FirebaseAuth.getInstance()
         firestore = FirebaseFirestore.getInstance()
-
-        // Hämta referens till TextView
         userTextView = findViewById(R.id.userTextView)
 
 
-
-        // Hämta referens till logoutButton
         val logoutButton = findViewById<Button>(R.id.logoutButton)
         logoutButton.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
-            // Efter utloggningen, navigera tillbaka till login- eller registreringsskärmen
             val intent = Intent(this, Login_Activity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -97,11 +87,7 @@ class AccountActivity : AppCompatActivity() {
                         val userEmail = currentUser.email
                         userTextView.text = "Du är inloggad som: $userEmail"
 
-                        // Hämta värden från dokumentet i Firestore och uppdatera variablerna
-
                         memberSinceDate = document.getString("memberSinceDate") ?: ""
-
-                        // Uppdatera texten i dina TextView-element
 
                         memberSinceTextView.text = "Medlem sedan: $memberSinceDate"
                     } else {
@@ -115,4 +101,5 @@ class AccountActivity : AppCompatActivity() {
             userTextView.text = "Ingen användare är för närvarande inloggad"
 
         }
-    }}
+    }
+}
