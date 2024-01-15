@@ -55,6 +55,7 @@ class MenuClickListener(private val context: Context, private val view: View) {
             // Visa/göm autocompleteFragment beroende på om RecyclerView är utökad eller inte
             autocompleteFragment?.view?.visibility = if (isRecyclerViewExpanded) View.GONE else View.VISIBLE
             searchButton.visibility = if (isRecyclerViewExpanded) View.VISIBLE else View.GONE
+
         }
 
 
@@ -63,6 +64,8 @@ class MenuClickListener(private val context: Context, private val view: View) {
             context.startActivity(intent)
             autocompleteFragment?.view?.visibility = View.GONE
             recyclerView.visibility = View.GONE
+
+
         }
 
         accountButton.setOnClickListener {
@@ -77,6 +80,6 @@ class MenuClickListener(private val context: Context, private val view: View) {
             context.startActivity(intent)
             autocompleteFragment?.view?.visibility = View.GONE
             recyclerView.visibility = View.GONE
+
         }
-    }
-}
+    }}

@@ -39,10 +39,15 @@ class Login_Activity : AppCompatActivity() {
 
         // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
+        settingsButton.isEnabled = false
+        settingsButton.isClickable = false
+        settingsButton.alpha = 0.5f
         val searchButton = findViewById<ImageButton>(R.id.searchButton)
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
         searchButton.visibility = View.VISIBLE
+
+
 
 
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna

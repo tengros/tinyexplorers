@@ -83,6 +83,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val autocompleteFragment =
             supportFragmentManager.findFragmentById(R.id.autocomplete_fragment)
         autocompleteFragment?.view?.visibility = View.VISIBLE
+        settingsButton.visibility = View.VISIBLE
 
 
         // Hämta aktuell användare från Firebase Authentication

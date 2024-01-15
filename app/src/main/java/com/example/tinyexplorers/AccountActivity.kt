@@ -22,7 +22,7 @@ class AccountActivity : AppCompatActivity() {
     private val recyclerView by lazy { findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this) }
 
 
-    var savedPlacesCount: Int = 0
+
     private var memberSinceDate: String = ""
 
 
@@ -34,11 +34,14 @@ class AccountActivity : AppCompatActivity() {
         recyclerView.visibility = View.GONE
 
 
-        val savedPlacesTextView = findViewById<TextView>(R.id.savedPlacesTextView)
+
         val memberSinceTextView = findViewById<TextView>(R.id.memberSinceTextView)
 
         // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
+        settingsButton.isEnabled = false
+        settingsButton.isClickable = false
+        settingsButton.alpha = 0.5f
         val searchButton = findViewById<ImageButton>(R.id.searchButton)
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
@@ -95,11 +98,11 @@ class AccountActivity : AppCompatActivity() {
                         userTextView.text = "Du är inloggad som: $userEmail"
 
                         // Hämta värden från dokumentet i Firestore och uppdatera variablerna
-                        savedPlacesCount = document.getLong("savedPlacesCount")?.toInt() ?: 0
+
                         memberSinceDate = document.getString("memberSinceDate") ?: ""
 
                         // Uppdatera texten i dina TextView-element
-                        savedPlacesTextView.text = "Antal sparade platser: $savedPlacesCount"
+
                         memberSinceTextView.text = "Medlem sedan: $memberSinceDate"
                     } else {
                         userTextView.text = "Ingen användare är för närvarande inloggad"
