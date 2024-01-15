@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -23,6 +24,8 @@ class Login_Activity : AppCompatActivity() {
 
 
     private lateinit var menuClickListener: MenuClickListener
+    private val recyclerView by lazy { findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this) }
+
     lateinit var auth: FirebaseAuth
     lateinit var firestore: FirebaseFirestore
     lateinit var emailView: EditText
@@ -31,12 +34,15 @@ class Login_Activity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.visibility = View.GONE
 
         // Hämta referenserna till knapparna från layouten
         val settingsButton = findViewById<ImageButton>(R.id.settingsButton)
         val searchButton = findViewById<ImageButton>(R.id.searchButton)
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
+        searchButton.visibility = View.VISIBLE
 
 
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
@@ -46,8 +52,8 @@ class Login_Activity : AppCompatActivity() {
             searchButton,
             accountButton,
             loginButton,
+            recyclerView,
             supportFragmentManager
-
         )
 
 

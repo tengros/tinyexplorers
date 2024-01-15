@@ -9,6 +9,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -17,6 +19,9 @@ class AccountActivity : AppCompatActivity() {
     private lateinit var userTextView: TextView
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
+    private val recyclerView by lazy { findViewById<RecyclerView>(R.id.recyclerViewMain) ?: RecyclerView(this) }
+
+
     var savedPlacesCount: Int = 0
     private var memberSinceDate: String = ""
 
@@ -24,6 +29,10 @@ class AccountActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_account)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.visibility = View.GONE
+
 
         val savedPlacesTextView = findViewById<TextView>(R.id.savedPlacesTextView)
         val memberSinceTextView = findViewById<TextView>(R.id.memberSinceTextView)
@@ -33,10 +42,13 @@ class AccountActivity : AppCompatActivity() {
         val searchButton = findViewById<ImageButton>(R.id.searchButton)
         val accountButton = findViewById<ImageButton>(R.id.accountButton)
         val loginButton = findViewById<ImageButton>(R.id.loginButton)
+        searchButton.visibility = View.VISIBLE
 
         val autocompleteFragment =
             supportFragmentManager.findFragmentById(R.id.autocomplete_fragment)
         autocompleteFragment?.view?.visibility = View.GONE
+
+
 
         // Skapa en instans av MenuClickListener och tilldela klicklyssnare till knapparna
         menuClickListener = MenuClickListener(this, findViewById(android.R.id.content))
@@ -45,8 +57,10 @@ class AccountActivity : AppCompatActivity() {
             searchButton,
             accountButton,
             loginButton,
+            recyclerView,
             supportFragmentManager
         )
+
 
         // Initialisera Firebase Auth och Firestore
         auth = FirebaseAuth.getInstance()

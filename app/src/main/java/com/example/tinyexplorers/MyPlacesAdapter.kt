@@ -33,6 +33,9 @@ class MyPlacesAdapter(
         holder.placeNameTextView.setOnClickListener {
             showPlaceDialog(place)
         }
+        holder.placeDescriptionTextView.setOnClickListener {
+            showPlaceDialog(place)
+        }
     }
 
     override fun getItemCount(): Int {

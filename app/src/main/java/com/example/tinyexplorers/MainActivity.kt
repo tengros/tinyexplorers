@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Places.initialize(applicationContext, "AIzaSyB6jFGRFNx2PK5r8c6sVWj2PyPzlsv-7q8")
 
-        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView = findViewById(R.id.recyclerViewMain)
         recyclerView.layoutManager = LinearLayoutManager(this)
         placesAdapter = MyPlacesAdapter(this, emptyList()) { place ->
             centerMapOnPlace(place)
@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             searchButton,
             accountButton,
             loginButton,
+            recyclerView,
             supportFragmentManager
         )
         val autocompleteFragment =
@@ -386,6 +387,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         markersList.add(place)
                         addMarkerToMap(LatLng(place.latitude, place.longitude), place)
                     } finally {
+
                     }
                 }
 
