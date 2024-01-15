@@ -30,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.firebase.firestore.FieldValue
+import android.content.Context
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mapView: MapView
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        placesAdapter = MyPlacesAdapter(emptyList())
+        placesAdapter = MyPlacesAdapter(this@MainActivity, emptyList())
         recyclerView.adapter = placesAdapter
         recyclerView.visibility = View.VISIBLE
 
@@ -223,22 +224,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         db.collection("users").document(userId).collection("places")
             .document("${marker.position.latitude}_${marker.position.longitude}")
             .delete()
-
             .addOnSuccessListener {
-
+                marker.remove()
                 fetchMarkersFromFirestore(userId)
                 Log.d("userid", "fetchmarkers $userId")
-
 
                 // Uppdatera savedPlacesCount genom att hämta det aktuella värdet och minska det med 1
                 val userDocRef = firestore.collection("users").document(userId)
                 userDocRef.update("savedPlacesCount", FieldValue.increment(-1))
                     .addOnSuccessListener {
-                        marker.remove()
-                        fetchMarkersFromFirestore(userId)
-                        Log.d("userid", "User ID fetched: $userId")
-                        // Uppdateringen lyckades
-                        Log.d("userid", "savedPlacesCount minskades framgångsrikt")
+
+                        // Lägg till detta utanför onSuccess-blocket
+                        placesAdapter.notifyDataSetChanged()
                     }
                     .addOnFailureListener { exception ->
                         // Hantera fel här
@@ -249,6 +246,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Hantera fel här
                 Log.e("removeMarker", "Fel vid borttagning från Firestore: $exception")
             }
+
     }
     private fun savePlaceDetails(userId: String, place: MyPlace) {
         val userDocRef = firestore.collection("users").document(userId)
@@ -324,7 +322,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         temporaryMarkersList.clear()
     }
 
-
     private val DEFAULT_LOCATION = LatLng( 57.7089, 11.9746)
 
     private fun enableMyLocation() {
@@ -374,7 +371,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun fetchMarkersFromFirestore(userId: String) {
-        placesAdapter = MyPlacesAdapter(markersList)
+        placesAdapter = MyPlacesAdapter(this, markersList)
         db.collection("users").document(userId).collection("places")
             .get()
             .addOnSuccessListener { documents ->
@@ -384,7 +381,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         val place = document.toObject(MyPlace::class.java)
                         markersList.add(place)
                         addMarkerToMap(LatLng(place.latitude, place.longitude), place)
-                        placesAdapter = MyPlacesAdapter(markersList)
+                        placesAdapter = MyPlacesAdapter(this, markersList)
                         recyclerView.adapter = placesAdapter
                     } finally {
 

@@ -4,9 +4,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
+import android.content.Context
 
-class MyPlacesAdapter(private val places: List<MyPlace>) : RecyclerView.Adapter<MyPlacesAdapter.PlaceViewHolder>() {
+class MyPlacesAdapter(private val context: Context, private val places: List<MyPlace>) : RecyclerView.Adapter<MyPlacesAdapter.PlaceViewHolder>()  {
 
     class PlaceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val placeNameTextView: TextView = itemView.findViewById(R.id.placeNameTextView)
@@ -22,9 +24,25 @@ class MyPlacesAdapter(private val places: List<MyPlace>) : RecyclerView.Adapter<
         val place = places[position]
         holder.placeNameTextView.text = place.name
         holder.placeDescriptionTextView.text = place.description
+
+        holder.itemView.setOnClickListener {
+            showPlaceDialog(place)
+        }
     }
 
     override fun getItemCount(): Int {
         return places.size
+    }
+
+    private fun showPlaceDialog(place: MyPlace) {
+        val alertDialogBuilder = AlertDialog.Builder(context)
+        alertDialogBuilder.setTitle(place.name)
+        alertDialogBuilder.setMessage("Beskrivning: ${place.description}\nStad: ${place.city}\nPlats: ${place.township}")
+
+        alertDialogBuilder.setPositiveButton("OK") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        alertDialogBuilder.create().show()
     }
 }
