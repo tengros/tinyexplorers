@@ -56,7 +56,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        placesAdapter = MyPlacesAdapter(this@MainActivity, emptyList())
+        placesAdapter = MyPlacesAdapter(this, emptyList()) { place ->
+            centerMapOnPlace(place)
+        }
         recyclerView.adapter = placesAdapter
         recyclerView.visibility = View.VISIBLE
 
@@ -220,6 +222,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             true
         }
     }
+
     private fun removeMarker(marker: Marker, userId: String) {
         db.collection("users").document(userId).collection("places")
             .document("${marker.position.latitude}_${marker.position.longitude}")
@@ -248,6 +251,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
     }
+
     private fun savePlaceDetails(userId: String, place: MyPlace) {
         val userDocRef = firestore.collection("users").document(userId)
 
@@ -298,6 +302,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         googleMap.addMarker(markerOptions)
     }
+
     private fun addSearchMarker(latLng: LatLng, selectedPlace: MyPlace) {
 
         clearTemporaryMarkers()
@@ -322,7 +327,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         temporaryMarkersList.clear()
     }
 
-    private val DEFAULT_LOCATION = LatLng( 57.7089, 11.9746)
+    private val DEFAULT_LOCATION = LatLng(57.7089, 11.9746)
 
     private fun enableMyLocation() {
 
@@ -371,7 +376,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun fetchMarkersFromFirestore(userId: String) {
-        placesAdapter = MyPlacesAdapter(this, markersList)
         db.collection("users").document(userId).collection("places")
             .get()
             .addOnSuccessListener { documents ->
@@ -381,11 +385,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         val place = document.toObject(MyPlace::class.java)
                         markersList.add(place)
                         addMarkerToMap(LatLng(place.latitude, place.longitude), place)
-                        placesAdapter = MyPlacesAdapter(this, markersList)
-                        recyclerView.adapter = placesAdapter
                     } finally {
+                    }
+                }
 
-                    }}}
+                placesAdapter = MyPlacesAdapter(this, markersList) { selectedPlace ->
+                    centerMapOnPlace(selectedPlace)
+                }
+                recyclerView.adapter = placesAdapter
+            }
+    }
+
+    private fun centerMapOnPlace(place: MyPlace) {
+        val location = LatLng(place.latitude, place.longitude)
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
     }
 
 
@@ -412,7 +425,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
-
 
 
 }

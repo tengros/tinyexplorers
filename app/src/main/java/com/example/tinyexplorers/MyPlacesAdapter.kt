@@ -8,7 +8,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import android.content.Context
 
-class MyPlacesAdapter(private val context: Context, private val places: List<MyPlace>) : RecyclerView.Adapter<MyPlacesAdapter.PlaceViewHolder>()  {
+class MyPlacesAdapter(
+    private val context: Context,
+    private val places: List<MyPlace>,
+    private val onPlaceNameClick: (MyPlace) -> Unit
+) : RecyclerView.Adapter<MyPlacesAdapter.PlaceViewHolder>() {
 
     class PlaceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val placeNameTextView: TextView = itemView.findViewById(R.id.placeNameTextView)
@@ -25,7 +29,8 @@ class MyPlacesAdapter(private val context: Context, private val places: List<MyP
         holder.placeNameTextView.text = place.name
         holder.placeDescriptionTextView.text = place.description
 
-        holder.itemView.setOnClickListener {
+        // Klicklyssnare för att visa popup när ett platsnamn klickas
+        holder.placeNameTextView.setOnClickListener {
             showPlaceDialog(place)
         }
     }
@@ -37,10 +42,14 @@ class MyPlacesAdapter(private val context: Context, private val places: List<MyP
     private fun showPlaceDialog(place: MyPlace) {
         val alertDialogBuilder = AlertDialog.Builder(context)
         alertDialogBuilder.setTitle(place.name)
-        alertDialogBuilder.setMessage("Beskrivning: ${place.description}\nStad: ${place.city}\nPlats: ${place.township}")
+        alertDialogBuilder.setMessage("Stad: ${place.city}\nPlats: ${place.township}\nBeskrivning: ${place.description}")
 
         alertDialogBuilder.setPositiveButton("OK") { dialog, _ ->
             dialog.dismiss()
+        }
+
+        alertDialogBuilder.setNegativeButton("Visa på kartan") { _, _ ->
+            onPlaceNameClick(place)
         }
 
         alertDialogBuilder.create().show()
